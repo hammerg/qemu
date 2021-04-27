@@ -2583,8 +2583,7 @@ e1000e_set_rdt(E1000ECore *core, int index, uint32_t val)
     igb_start_recv(core);
 }
 
-static void
-e1000e_set_status(E1000ECore *core, int index, uint32_t val)
+static void igb_set_status(E1000ECore *core, int index, uint32_t val)
 {
     if ((val & E1000_STATUS_PHYRA) == 0) {
         core->mac[index] &= ~E1000_STATUS_PHYRA;
@@ -2853,46 +2852,45 @@ e1000e_get_ctrl(E1000ECore *core, int index)
     return val;
 }
 
-static uint32_t
-e1000e_get_status(E1000ECore *core, int index)
+static uint32_t igb_get_status(E1000ECore *core, int index)
 {
-    uint32_t res = core->mac[STATUS];
-
-    if (!(core->mac[CTRL] & E1000_CTRL_GIO_MASTER_DISABLE)) {
-        res |= E1000_STATUS_GIO_MASTER_ENABLE;
-    }
+    uint32_t status = core->mac[STATUS];
 
     if (core->mac[CTRL] & E1000_CTRL_FRCDPX) {
-        res |= (core->mac[CTRL] & E1000_CTRL_FD) ? E1000_STATUS_FD : 0;
+        status |= (core->mac[CTRL] & E1000_CTRL_FD) ? E1000_STATUS_FD : 0;
     } else {
-        res |= E1000_STATUS_FD;
+        status |= E1000_STATUS_FD;
     }
 
     if ((core->mac[CTRL] & E1000_CTRL_FRCSPD) ||
         (core->mac[CTRL_EXT] & E1000_CTRL_EXT_SPD_BYPS)) {
         switch (core->mac[CTRL] & E1000_CTRL_SPD_SEL) {
         case E1000_CTRL_SPD_10:
-            res |= E1000_STATUS_SPEED_10;
+            status |= E1000_STATUS_SPEED_10;
             break;
         case E1000_CTRL_SPD_100:
-            res |= E1000_STATUS_SPEED_100;
+            status |= E1000_STATUS_SPEED_100;
             break;
         case E1000_CTRL_SPD_1000:
         default:
-            res |= E1000_STATUS_SPEED_1000;
+            status |= E1000_STATUS_SPEED_1000;
             break;
         }
     } else {
-        res |= E1000_STATUS_SPEED_1000;
+        status |= E1000_STATUS_SPEED_1000;
     }
 
-    trace_e1000e_link_status(
-        !!(res & E1000_STATUS_LU),
-        !!(res & E1000_STATUS_FD),
-        (res & E1000_STATUS_SPEED_MASK) >> E1000_STATUS_SPEED_SHIFT,
-        (res & E1000_STATUS_ASDV) >> E1000_STATUS_ASDV_SHIFT);
+    if (pcie_sriov_is_iov(core->owner)) {
+        status |=
+            (pcie_sriov_vfs_count(core->owner) << E1000_STATUS_NUM_VFS_SHIFT);
+        status |= E1000_STATUS_IOV_MODE;
+    }
 
-    return res;
+    if (!(core->mac[CTRL] & E1000_CTRL_GIO_MASTER_DISABLE)) {
+        status |= E1000_STATUS_GIO_MASTER_ENABLE;
+    }
+
+    return status;
 }
 
 static uint32_t
@@ -3484,7 +3482,7 @@ static const readops e1000e_macreg_readops[] = {
     [RDFPC]   = E1000E_LOW_BITS_READ(13),
     [TDFH]    = E1000E_LOW_BITS_READ(13),
     [TDFHS]   = E1000E_LOW_BITS_READ(13),
-    [STATUS]  = e1000e_get_status,
+    [STATUS]  = igb_get_status,
     [TARC0]   = e1000e_get_tarc,
     [PBS]     = E1000E_LOW_BITS_READ(6),
     [ICS]     = e1000e_mac_ics_read,
@@ -3892,7 +3890,7 @@ static const writeops e1000e_macreg_writeops[] = {
     [RDBAL13]  = igb_set_dbal,
     [RDBAL14]  = igb_set_dbal,
     [RDBAL15]  = igb_set_dbal,
-    [STATUS]   = e1000e_set_status,
+    [STATUS]   = igb_set_status,
     [PBACLR]   = e1000e_set_pbaclr,
     [CTRL_EXT] = e1000e_set_ctrlext,
     [FCAH]     = e1000e_set_16bit,
@@ -4318,7 +4316,7 @@ static const uint32_t e1000e_mac_reg_init[] = {
     [RXUDP]         = 0x319,
     [CTRL]          = E1000_CTRL_FD | E1000_CTRL_LRST | E1000_CTRL_SPD_1000 |
                       E1000_CTRL_ADVD3WUC,
-    [STATUS]        = E1000_STATUS_ASDV_1000 | E1000_STATUS_LU,
+    [STATUS]        = E1000_STATUS_PHYRA | E1000_STATUS_GIO_MASTER_ENABLE,
     [PSRCTL]        = (2 << E1000_PSRCTL_BSIZE0_SHIFT) |
                       (4 << E1000_PSRCTL_BSIZE1_SHIFT) |
                       (4 << E1000_PSRCTL_BSIZE2_SHIFT),
