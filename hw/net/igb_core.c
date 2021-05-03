@@ -4081,7 +4081,6 @@ static const uint16_t mac_reg_access[E1000E_MAC_SIZE] = {
     [TDLEN0_ALT] = 0x2A00,
     [TDH0_ALT] = 0x2A00,
     [TDT0_ALT] = 0x2A00,
-    [TXDCTL0_ALT] = 0x2A00,
     [TXCTL0_ALT] = 0x2A00,
     [TDWBAL0_ALT] = 0x2A00,
     [TDWBAH0_ALT] = 0x2A00,
@@ -4100,6 +4099,7 @@ static const uint16_t mac_reg_access[E1000E_MAC_SIZE] = {
     [TDT1_ALT] = 0x29D0,
     [TDT2_ALT] = 0x29A0,
     [TDT3_ALT] = 0x2970,
+    [TXDCTL0_ALT] = 0x2A00,
     [TXDCTL1_ALT] = 0x29D0,
     [TXDCTL2_ALT] = 0x29A0,
     [TXDCTL3_ALT] = 0x2970,
@@ -4124,8 +4124,7 @@ static const uint16_t mac_reg_access[E1000E_MAC_SIZE] = {
     [FCAL]  = MAC_ACCESS_PARTIAL,    [FCAH]  = MAC_ACCESS_PARTIAL,
     [FCT]   = MAC_ACCESS_PARTIAL,    [FCTTV] = MAC_ACCESS_PARTIAL,
     [FCRTV] = MAC_ACCESS_PARTIAL,    [FCRTL] = MAC_ACCESS_PARTIAL,
-    [FCRTH] = MAC_ACCESS_PARTIAL,    [TXDCTL] = MAC_ACCESS_PARTIAL,
-    [TXDCTL1] = MAC_ACCESS_PARTIAL,
+    [FCRTH] = MAC_ACCESS_PARTIAL,
     [MAVTV0 ... MAVTV3] = MAC_ACCESS_PARTIAL
 };
 
